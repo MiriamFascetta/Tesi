@@ -1,0 +1,54 @@
+Label: 9
+Result: log(p): prompt
+----------------
+-1.35: identify which of the input-output pairs indicate fair or unfair conditions for an arbitration.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.22: determine whether the following sentences are considered fair or unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.77: take the first word of a sentence and produce the ethical consideration of the sentence.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.56: identify the degree of fairness/unfairness of various jurisdiction and arbitration clauses.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.39: give the input: SPECIALNUMBER  legal jurisdiction of which country.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.83: make two inputs, and to make the second output to match the first output.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.50: make the output fair or unfair depending on the likelihood of the action being taken.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.41: write the sentence with all instances of "SPECIALNUMBER" removed.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.71: give an example of a sentence that is unfair and a sentence that is fair.
+
+
