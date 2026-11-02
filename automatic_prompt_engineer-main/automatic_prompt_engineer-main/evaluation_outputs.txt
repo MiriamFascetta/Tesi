@@ -1,8 +1,0 @@
-CausalLMOutputWithPast(loss=None, logits=tensor([[[ 0.8984,  3.3809,  8.2031,  ..., -0.7305, -0.7305, -0.7305],
-         [ 2.9746,  1.0303,  3.4277,  ..., -7.2500, -7.2500, -7.2500],
-         [-3.9883, -7.0703, -5.4180,  ..., -7.1719, -7.1719, -7.1719],
-         ...,
-         [ 5.5586,  4.0078,  6.4883,  ..., -0.3652, -0.3652, -0.3650],
-         [ 2.7637,  1.0801,  0.9727,  ..., -2.0078, -2.0078, -2.0078],
-         [ 6.1875,  5.4453,  5.1367,  ...,  2.1289,  2.1289,  2.1289]]],
-       device='cuda:0', dtype=torch.float16), past_key_values=DynamicCache(layers=[DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer, DynamicLayer]), hidden_states=None, attentions=None)
