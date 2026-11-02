@@ -1,0 +1,54 @@
+Label: 9
+Result: log(p): prompt
+----------------
+-1.0532: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.4810: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.9873: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.6760: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-1.0777: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-1.3665: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.9136: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-1.1015: Please, tell whether the input clause is unfair.
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-1.5564: Please, tell whether the input clause is unfair.
+
+

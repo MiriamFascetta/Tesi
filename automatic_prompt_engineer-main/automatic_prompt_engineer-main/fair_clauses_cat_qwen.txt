@@ -1,0 +1,27 @@
+Category: a
+Clause indices: []
+
+Category: ch
+Clause indices: []
+
+Category: cr
+Clause indices: []
+
+Category: j
+Clause indices: []
+
+Category: law
+Clause indices: []
+
+Category: ltd
+Clause indices: []
+
+Category: ter
+Clause indices: []
+
+Category: use
+Clause indices: []
+
+Category: pinc
+Clause indices: []
+

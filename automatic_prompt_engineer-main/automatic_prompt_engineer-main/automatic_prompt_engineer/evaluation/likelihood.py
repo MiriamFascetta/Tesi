@@ -166,5 +166,5 @@ class LikelihoodEvaluationResult(evaluate.EvaluationResult):
         s += 'log(p): prompt\n'
         s += '----------------\n'
         for prompt, score in list(zip(prompts, scores))[:10]:
-            s += f'{score:.2f}: {prompt}\n'
+            s += f'{score:.4f}: {prompt}\n'
         return s

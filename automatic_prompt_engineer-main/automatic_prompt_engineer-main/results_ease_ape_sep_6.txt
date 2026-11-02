@@ -1,0 +1,6 @@
+Label: 6
+Result: log(p): prompt
+----------------
+-0.8179: give the output label of a text that is written by a lawyer but not
+
+

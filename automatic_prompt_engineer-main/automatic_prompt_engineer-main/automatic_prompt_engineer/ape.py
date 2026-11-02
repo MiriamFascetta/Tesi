@@ -7,18 +7,163 @@ import random
 import torch
 from ease import LlamaForMLPRegression
 import numpy as np
-from transformers import AutoTokenizer, AutoModel
+from transformers import (
+    AutoModel,
+    AutoTokenizer,
+    AutoModelForSequenceClassification
+)
+from sklearn.metrics import precision_recall_fscore_support
+from torch.utils.data import Dataset, DataLoader
+from torch.optim import Adam
 
-'''
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn import preprocessing
-import nltk
-from nltk.stem import PorterStemmer
-import re
-from nltk.corpus import stopwords
-nltk.download('punkt_tab')
-nltk.download('stopwords')
-'''
+
+def to_binary(label_lists):
+    """[[1, 3], [0], [], [5]] -> [1, 0, 0, 1]"""
+    return np.array([int(any(int(l) != 0 for l in (labs or []))) for labs in label_lists],
+                    dtype=np.int64)
+ 
+ 
+class TextDataset(Dataset):
+    def __init__(self, texts, labels, tokenizer):
+        self.enc = tokenizer(list(texts), truncation=True, padding="max_length", return_tensors="pt")
+        self.labels = torch.tensor(labels, dtype=torch.float)
+ 
+    def __len__(self):
+        return len(self.labels)
+ 
+    def __getitem__(self, i):
+        item = {k: v[i] for k, v in self.enc.items()}
+        item["labels"] = self.labels[i]
+        return item
+ 
+ 
+# --------------------------------------------------------------------------- #
+# Metrics
+# --------------------------------------------------------------------------- #
+def compute_metrics(y_true, y_prob, threshold=0.5):
+    y_pred = (y_prob >= threshold).astype(int)
+    out = {}
+    for avg in ("micro", "macro"):  # averaged over the two classes {0, 1}
+        p, r, f1, _ = precision_recall_fscore_support(
+            y_true, y_pred, labels=[0, 1], average=avg, zero_division=0)
+        out[f"{avg}_precision"], out[f"{avg}_recall"], out[f"{avg}_f1"] = p, r, f1
+    p, r, f1, _ = precision_recall_fscore_support(  # positive class only
+        y_true, y_pred, labels=[1], average=None, zero_division=0)
+    out["pos_precision"], out["pos_recall"], out["pos_f1"] = p[0], r[0], f1[0]
+    return out
+ 
+ 
+def print_metrics(m, title):
+    print(f"\n=== {title} ===")
+    print(f"Micro  P: {m['micro_precision']:.4f}  R: {m['micro_recall']:.4f}  F1: {m['micro_f1']:.4f}")
+    print(f"Macro  P: {m['macro_precision']:.4f}  R: {m['macro_recall']:.4f}  F1: {m['macro_f1']:.4f}")
+    print(f"Class 1 (positive)  P: {m['pos_precision']:.4f}  R: {m['pos_recall']:.4f}  F1: {m['pos_f1']:.4f}")
+ 
+ 
+def tune_threshold(y_true, y_prob):
+    """Pick the threshold that maximises macro-F1 on dev data."""
+    best_t, best_f1 = 0.5, -1
+    for t in np.arange(0.05, 0.96, 0.05):
+        f1 = compute_metrics(y_true, y_prob, t)["macro_f1"]
+        if f1 > best_f1:
+            best_t, best_f1 = t, f1
+    return best_t
+ 
+ 
+# --------------------------------------------------------------------------- #
+# Train / eval
+# --------------------------------------------------------------------------- #
+@torch.no_grad()
+def predict(model, loader, device, fp16=False):
+    model.eval()
+    probs, golds = [], []
+    for batch in loader:
+        labels = batch.pop("labels")
+        batch = {k: v.to(device) for k, v in batch.items()}
+        with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=fp16):
+            logits = model(**batch).logits.squeeze(-1)
+        probs.append(torch.sigmoid(logits.float()).cpu().numpy())
+        golds.append(labels.numpy())
+    return np.concatenate(golds).astype(int), np.concatenate(probs)
+ 
+
+
+def train_legalbert(train_set, val_set, test_set, num_labels, batch_size, lr, epochs, patience, MODEL_NAME = "nlpaueb/legal-bert-base-uncased"):
+    device = torch.device("cuda")
+    tok = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME,
+        num_labels=num_labels,
+        problem_type="multi_label_classification",  # uses BCEWithLogitsLoss
+    ).to(device)
+
+    X_tr, y_tr = train_set[0], to_binary(train_set[1])
+    X_va, y_va = val_set[0], to_binary(val_set[1])
+    X_te, y_te = test_set[0], to_binary(test_set[1])
+
+    mk = lambda X, y, shuffle: DataLoader(
+        TextDataset(X, y, tok), batch_size = batch_size, shuffle=shuffle)
+    train_dl, val_dl, test_dl = mk(X_tr, y_tr, True), mk(X_va, y_va, False), mk(X_te, y_te, False)
+    
+    pos = float(y_tr.sum())
+    pw = len(y_tr) / (pos)
+    print(f'Peso {pw}')
+    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pw, dtype=torch.float, device=device))
+    
+    optim = Adam(model.parameters(), lr = lr)
+    scaler = torch.amp.GradScaler("cuda", enabled=True)
+ 
+    best_f1, best_state, bad_epochs = -1, None, 0
+    for epoch in range(1, epochs + 1):
+        print(f'Epoch {epoch}')
+        model.train()
+        running = 0.0
+        for batch in train_dl:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            labels = batch.pop("labels")
+            with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=True):
+                logits = model(**batch).logits.squeeze(-1)
+            loss = loss_fn(logits.float(), labels)   # weighted BCE computed in fp32
+            scaler.scale(loss).backward()
+            scaler.unscale_(optim)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            scaler.step(optim)
+            scaler.update()
+            optim.zero_grad()
+            running += loss.item()
+
+        yv, pv = predict(model, val_dl, device, True)
+        m = compute_metrics(yv, pv)
+        print(f"Epoch {epoch}: train loss {running/len(train_dl):.4f} | "
+              f"dev micro-F1 {m['micro_f1']:.4f} | dev macro-F1 {m['macro_f1']:.4f}")
+ 
+        # Early stopping on dev micro-F1
+        if m["macro_f1"] > best_f1:
+            best_f1, bad_epochs = m["macro_f1"], 0
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        else:
+            bad_epochs += 1
+            if bad_epochs >= patience:
+                print(f"Early stopping at epoch {epoch} (best dev micro-F1 {best_f1:.4f})")
+                break
+
+    # Restore best checkpoint, tune threshold on val, evaluate on test
+    model.load_state_dict(best_state)
+    yv, pv = predict(model, val_dl, device, True)
+    thr = tune_threshold(yv, pv)
+    print(f"\nBest validation threshold: {thr:.2f}")
+ 
+    yt, pt = predict(model, test_dl, device, True)
+    print_metrics(compute_metrics(yt, pt, 0.5), "TEST (threshold = 0.5)")
+    print_metrics(compute_metrics(yt, pt, thr), f"TEST (tuned threshold = {thr:.2f})")
+
+    # Optional: per-label breakdown
+    p, r, f, s = precision_recall_fscore_support(
+        yt, (pt >= thr).astype(int), average=None, zero_division=0)
+    print("\nPer-label (tuned threshold):")
+    for i, name in enumerate(label_cols):
+        print(f"  {name:25s} P={p[i]:.3f} R={r[i]:.3f} F1={f[i]:.3f} support={s[i]}")
+
 
 tkwargs = {
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),

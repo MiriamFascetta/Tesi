@@ -1,0 +1,61 @@
+Label: 9
+Result: log(p): prompt
+----------------
+-0.84: predict the output for the following input:
+
+Input: the arbitration shall be conducted
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.31: determine if the contract clause is fair or unfair. Can we formalize this
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.73: replace the following words:
+replace the word "unfair" with "fair"
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.44: identify the fairness of jurisdiction statements. I will now give you an instruction:
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-1.16: write an output for the following input:
+
+Input: these terms of use are
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.82: give the output label of a text that is written by a lawyer but not
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.75: find all the words or phrases that appear in both the input and output in
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-0.49: indicate whether each pair was a "fair" or "unfair" contract
+
+
+Label: 9
+Result: log(p): prompt
+----------------
+-1.23: determine whether a given privacy policy statement was fair or unfair.
+
+I used the
+
+
